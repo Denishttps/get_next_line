@@ -1,0 +1,9 @@
+{
+  "42header.username": "dbobrov",
+  "42header.email": "dbobrov@student.42wolfsburg.de",
+    "[c]": {
+        "editor.insertSpaces": false,
+        "editor.tabSize": 4,
+        "editor.detectIndentation": false
+    }
+}
