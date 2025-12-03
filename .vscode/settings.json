@@ -5,5 +5,9 @@
         "editor.insertSpaces": false,
         "editor.tabSize": 4,
         "editor.detectIndentation": false
+    },
+    "files.associations": {
+      "*.dbclient-js": "javascript",
+      "get_next_line.h": "c"
     }
 }

@@ -2,85 +2,96 @@
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   get_next_line.c                                    :+:      :+:    :+:   */
-/*                                                    +:+ +:+        
-	+:+     */
-/*   By: dbobrov <dbobrov@student.42wolfsburg.de    +#+  +:+      
-	+#+        */
-/*                                                +#+#+#+#+#+  
-	+#+           */
-/*   Created: 2025/12/02 15:38:33 by dbobrov           #+#    #+#             */
-/*   Updated: 2025/12/02 15:38:33 by dbobrov          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   get_next_line.c                                    :+:      :+:    :+:   */
-/*                                                    +:+ +:+        
-	+:+     */
-/*   By: dbobrov <dbobrov@student.42.fr>            +#+  +:+      
-	+#+        */
-/*                                                +#+#+#+#+#+  
-	+#+           */
-/*   Created: 2025/12/02 13:09:00 by dbobrov           #+#    #+#             */
-/*   Updated: 2025/12/02 13:09:00 by dbobrov          ###   ########.fr       */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dbobrov <dbobrov@student.42wolfsburg.de    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/12/03 00:55:58 by dbobrov           #+#    #+#             */
+/*   Updated: 2025/12/03 00:55:58 by dbobrov          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
 
-
-char	*read_line(int fd, char *buffer)
+static char	*update_stash(char *stash)
 {
-	ssize_t n;
-	size_t j;
-	size_t size_tmp;
-	char *tmp;
-	char *newline_pos;
-	int loop;
+	char	*newline;
+	char	*new_stash;
+	size_t	start;
 
-	j = 0;
-	size_tmp = BUFFER_SIZE + 1;
-	tmp = malloc(size_tmp);
-	if (!tmp)
+	newline = ft_strchr(stash, '\n');
+	if (!newline || !*(newline + 1))
+	{
+		free(stash);
 		return (NULL);
-	loop = 1;
-	while (loop)
+	}
+	start = (newline - stash) + 1;
+	new_stash = ft_substr(stash, start, ft_strlen(stash) - start);
+	free(stash);
+	return (new_stash);
+}
+
+static char	*create_line(char *stash)
+{
+	char	*newline;
+	char	*line;
+	size_t	len;
+
+	if (!stash || !*stash)
+		return (NULL);
+	newline = ft_strchr(stash, '\n');
+	if (newline)
+		len = (newline - stash) + 2;
+	else
+		len = ft_strlen(stash) + 1;
+	line = (char *)malloc(len);
+	if (!line)
+		return (NULL);
+	ft_memcpy(line, stash, len - 1);
+	line[len - 1] = '\0';
+	return (line);
+}
+
+static char	*read_line(int fd, char *stash)
+{
+	char	*buffer;
+	ssize_t	n;
+
+	buffer = (char *)malloc(BUFFER_SIZE + 1);
+	if (!buffer)
+		return (NULL);
+	while (!ft_strchr(stash, '\n'))
 	{
 		n = read(fd, buffer, BUFFER_SIZE);
-		if (n <= 0)
+		if (n == -1)
+			return (free(buffer), free(stash), NULL);
+		if (n == 0)
 			break ;
-		newline_pos = ft_strchr(buffer, '\n');
-		if (j + (size_t)n + 1 >= size_tmp)
-		{
-			tmp = ft_realloc(tmp, size_tmp, size_tmp + BUFFER_SIZE + n);
-			if (!tmp)
-				return (NULL);
-			size_tmp += BUFFER_SIZE + n;
-		}
-		ft_memcpy(tmp + j, buffer, n);
-		j += n;
-		if (newline_pos)
-			loop = 0;
+		buffer[n] = '\0';
+		stash = ft_strjoin_free(stash, buffer);
+		if (!stash)
+			return (free(buffer), NULL);
 	}
-	if (j == 0)
-	{
-		free(tmp);
-		return (NULL);
-	}
-	tmp[j] = '\0';
-	return (tmp);
+	free(buffer);
+	return (stash);
 }
 
 char	*get_next_line(int fd)
 {
-	char		*buffer;
-	static char	*stash;
-	char		*temp;
+	static char	*stash = NULL;
+	char		*line;
 
 	if (fd < 0 || BUFFER_SIZE <= 0)
 		return (NULL);
-	buffer = malloc(BUFFER_SIZE + 1);
-	
+	stash = read_line(fd, stash);
+	if (!stash)
+		return (NULL);
+	line = create_line(stash);
+	if (!line)
+	{
+		free(stash);
+		stash = NULL;
+		return (NULL);
+	}
+	stash = update_stash(stash);
+	return (line);
 }
